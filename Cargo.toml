@@ -1,0 +1,19 @@
+[package]
+name = "imzml"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "imzml"
+path = "src/lib.rs"
+
+[[bin]]
+name = "imzml"
+path = "src/main.rs"
+
+[[bin]]
+name = "create_ionic"
+path = "src/bin/create_ionic.rs"
+
+[dependencies]
+ionic = { git = "https://github.com/josoriom/ionic", branch = "wip" }

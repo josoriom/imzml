@@ -1,21 +1,20 @@
 use std::path::PathBuf;
 
-use imzml::ionic_converter::convert_imzml_to_ion;
+use imzml::{parse_imzml_with_options, write_ion_file, ConversionOptions};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let imzml_path = PathBuf::from("data/200TopL, 170TopR, 190BottomL, 180BottomR-centroid.imzML");
-    let ibd_path = PathBuf::from("data/200TopL, 170TopR, 190BottomL, 180BottomR-centroid.ibd");
-    let ion_path = PathBuf::from("data/200TopL, 170TopR, 190BottomL, 180BottomR-centroid.ion");
+    let imzml_path = PathBuf::from("data/GastricMouseTumor+MALDI+FT-ICR.imzML");
+    let ibd_path = PathBuf::from("data/GastricMouseTumor+MALDI+FT-ICR.ibd");
+    let ion_path = PathBuf::from("data/GastricMouseTumor+MALDI+FT-ICR.ion");
+    let log_memory = true;
+    let options = ConversionOptions {
+        log_memory,
+        ..ConversionOptions::default()
+    };
 
-    let mzml = convert_imzml_to_ion(&imzml_path, &ibd_path, &ion_path)?;
+    let imzml = parse_imzml_with_options(&imzml_path, &ibd_path, options)?;
+    let summary = write_ion_file(imzml, &ion_path, options)?;
 
-    let spectra_count = mzml
-        .run
-        .spectrum_list
-        .as_ref()
-        .map(|list| list.spectra.len())
-        .unwrap_or(0);
-
-    println!("Wrote {ion_path:?} with {spectra_count} spectra");
+    println!("Wrote {ion_path:?} with {} spectra", summary.spectra_count);
     Ok(())
 }

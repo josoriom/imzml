@@ -177,12 +177,13 @@ name = "imzml"
 version = "0.1.0"
 dependencies = [
  "ionic",
+ "libc",
 ]
 
 [[package]]
 name = "ionic"
 version = "0.1.0"
-source = "git+https://github.com/josoriom/ionic?branch=wip#41a8422b6af95823d99453ffd018c5cfc2df5161"
+source = "git+https://github.com/josoriom/ionic?branch=main#7f6c040537ab463a01edf274df8d85f2c0067b29"
 dependencies = [
  "base64",
  "crc32fast",

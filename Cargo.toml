@@ -16,4 +16,5 @@ name = "create_ionic"
 path = "src/bin/create_ionic.rs"
 
 [dependencies]
-ionic = { git = "https://github.com/josoriom/ionic", branch = "wip" }
+ionic = { git = "https://github.com/josoriom/ionic", branch = "main", version = "0.1.0" }
+libc = "0.2"

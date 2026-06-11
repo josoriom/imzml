@@ -15,12 +15,10 @@ use std::{
 use ionic::{
     ion::{
         encoder::{
-            encode::{EncodingConfig, DEFAULT_MIN_SPLIT_BYTES, DEFAULT_TARGET_SEGMENT_BYTES},
-            file_reader::FileReader,
-            ion_writer::{stream_to_ion, IonWriter},
-            utilities::SectionChunkMode,
+            encode::{WriteOptions, DEFAULT_TARGET_SEGMENT_BYTES},
+            scan_stream::ScanStream,
         },
-        FileEncoderOutput, IonError, IonResult, TempFile,
+        FileWriter, IonError, IonReader, IonResult, ReadOptions, SectionStorage, TempFile,
     },
     mzml::{
         structs::{
@@ -29,6 +27,7 @@ use ionic::{
         },
         MzmlReader,
     },
+    IonWriter,
 };
 
 const FLOAT_64_BIT: &str = "MS:1000523";
@@ -69,7 +68,7 @@ impl Default for ConversionOptions {
 
 impl Imzml {
     pub fn get_metadata(&mut self) -> IonResult<MzML> {
-        self.reader.get_metadata()
+        self.reader.metadata()
     }
 
     pub fn get_next_spectrum(&mut self) -> IonResult<Option<Spectrum>> {
@@ -93,9 +92,9 @@ impl Imzml {
     }
 }
 
-impl FileReader for Imzml {
-    fn get_metadata(&mut self) -> IonResult<MzML> {
-        self.reader.get_metadata()
+impl ScanStream for Imzml {
+    fn metadata(&mut self) -> IonResult<MzML> {
+        self.reader.metadata()
     }
 
     fn next_spectrum(&mut self) -> IonResult<Option<Spectrum>> {
@@ -197,11 +196,12 @@ pub fn write_ion_file(
 ) -> Result<ConversionSummary, Box<dyn Error>> {
     let temp_output = TempFile::new(ion_path)?;
     {
-        let mut output = FileEncoderOutput::open_path(temp_output.path())
+        let mut output = FileWriter::open_path(temp_output.path())
             .map_err(|e| format!("cannot create ion file: {e}"))?;
-        let mut writer = IonWriter::begin(&mut output, encoding_config(options))
+        let mut writer = IonWriter::begin(&mut output, write_options(options))
             .map_err(|e| format!("cannot start ion writer: {e}"))?;
-        stream_to_ion(&mut imzml, &mut writer)
+        writer
+            .write_stream(&mut imzml)
             .map_err(|e| format!("cannot write ion file: {e}"))?;
         drop(writer);
         output
@@ -436,7 +436,7 @@ impl ImzmlReader {
         memory_log: MemoryLog,
     ) -> Result<Self, Box<dyn Error>> {
         let mut mzml = MzmlReader::open(imzml_path)?;
-        let metadata = mzml.get_metadata()?;
+        let metadata = mzml.metadata()?;
         let total_spectra = metadata
             .run
             .spectrum_list
@@ -509,9 +509,9 @@ impl ImzmlReader {
     }
 }
 
-impl FileReader for ImzmlReader {
-    fn get_metadata(&mut self) -> IonResult<MzML> {
-        self.mzml.get_metadata()
+impl ScanStream for ImzmlReader {
+    fn metadata(&mut self) -> IonResult<MzML> {
+        self.mzml.metadata()
     }
 
     fn next_spectrum(&mut self) -> IonResult<Option<Spectrum>> {
@@ -712,15 +712,14 @@ fn write_normalized_binary_tags(
     Ok(())
 }
 
-fn encoding_config(options: ConversionOptions) -> EncodingConfig {
-    EncodingConfig {
+fn write_options(options: ConversionOptions) -> WriteOptions {
+    WriteOptions {
         compression_level: 18,
         force_f32: false,
-        uncompressed_block_size: get_block_size(options),
+        block_size: get_block_size(options),
         parallel: true,
-        section_chunk: SectionChunkMode::Disk,
-        target_segment_bytes: DEFAULT_TARGET_SEGMENT_BYTES,
-        min_split_bytes: DEFAULT_MIN_SPLIT_BYTES,
+        section_storage: SectionStorage::Disk,
+        segment_size: DEFAULT_TARGET_SEGMENT_BYTES,
     }
 }
 
@@ -736,10 +735,8 @@ pub fn read_spectrum_from_ion(
     ion_path: &Path,
     index: usize,
 ) -> Result<Option<ionic::mzml::structs::Spectrum>, Box<dyn Error>> {
-    use ionic::ion::{DecoderConfig, Ion};
-
-    let mut ion = Ion::open_file(ion_path, DecoderConfig::default())
+    let mut ion = IonReader::open_file(ion_path, ReadOptions::default())
         .map_err(|e| format!("cannot open ion file: {e}"))?;
-    ion.spectrum_at(index)
+    ion.get_spectrum(index)
         .map_err(|e| format!("cannot read spectrum: {e}").into())
 }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use imzml::{convert_imzml_to_ion, parse_imzml, read_spectrum_from_ion};
-use ionic::mzml::structs::{BinaryData, Spectrum};
+use ionic::mzml::structs::{NumericArray, Spectrum};
 
 fn imzml_path() -> PathBuf {
     PathBuf::from("data/200TopL, 170TopR, 190BottomL, 180BottomR-centroid.imzML")
@@ -15,7 +15,7 @@ fn ion_path() -> PathBuf {
     PathBuf::from("data/test_output.ion")
 }
 
-fn array_values(spectrum: &Spectrum, index: usize) -> &BinaryData {
+fn array_values(spectrum: &Spectrum, index: usize) -> &NumericArray {
     spectrum
         .binary_data_array_list
         .as_ref()
@@ -75,10 +75,10 @@ fn sample_indexes(count: usize) -> Vec<usize> {
     vec![0, 1, count / 4, count / 2, count - 2, count - 1]
 }
 
-fn assert_arrays_match(expected: &BinaryData, actual: &BinaryData) {
+fn assert_arrays_match(expected: &NumericArray, actual: &NumericArray) {
     match (expected, actual) {
-        (BinaryData::F64(left), BinaryData::F64(right)) => assert_eq!(left, right),
-        (BinaryData::F32(left), BinaryData::F32(right)) => assert_eq!(left, right),
+        (NumericArray::F64(left), NumericArray::F64(right)) => assert_eq!(left, right),
+        (NumericArray::F32(left), NumericArray::F32(right)) => assert_eq!(left, right),
         _ => panic!("binary data type mismatch"),
     }
 }

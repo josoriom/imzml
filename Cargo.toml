@@ -17,4 +17,13 @@ path = "src/bin/create_ionic.rs"
 
 [dependencies]
 ionic = { git = "https://github.com/josoriom/ionic", branch = "main", version = "0.1.0" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
 libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+] }

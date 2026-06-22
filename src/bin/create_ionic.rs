@@ -1,7 +1,7 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use imzml::{parse_imzml_with_options, read_spectrum_from_ion, write_ion_file, ConversionOptions};
-use ionic::mzml::structs::BinaryData;
+use ionic::mzml::structs::NumericArray;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let imzml_path = PathBuf::from("data/200TopL, 170TopR, 190BottomL, 180BottomR-centroid.imzML");
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn print_first_array_from_ion(ion_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+fn print_first_array_from_ion(ion_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let Some(spectrum) = read_spectrum_from_ion(ion_path, 0)? else {
         return Ok(());
     };
@@ -39,7 +39,7 @@ fn print_first_array_from_ion(ion_path: &PathBuf) -> Result<(), Box<dyn std::err
         return Ok(());
     };
     println!("\nion first m/z values:");
-    if let Some(BinaryData::F64(values)) = &array.binary {
+    if let Some(NumericArray::F64(values)) = &array.binary {
         println!("  {:?}", &values[..values.len().min(5)]);
     }
     Ok(())

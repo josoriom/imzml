@@ -1,9 +1,9 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use crate::utilities::{format_bytes, format_percent, get_memory_status};
+use crate::utilities::{format_bytes, format_gb, format_percent, get_memory_status};
 
 const MEMORY_LOG_SECONDS: u64 = 2;
 
@@ -19,6 +19,9 @@ struct MemoryLogData {
     spectra_count: AtomicUsize,
     total_spectra: AtomicUsize,
     chromatogram_count: AtomicUsize,
+    input_bytes: AtomicU64,
+    output_bytes: AtomicU64,
+    observed_peak_bytes: AtomicU64,
 }
 
 impl MemoryLog {
@@ -73,6 +76,18 @@ impl MemoryLog {
         }
     }
 
+    pub(crate) fn set_input_size(&self, input_bytes: u64) {
+        if let Some(data) = &self.data {
+            data.input_bytes.store(input_bytes, Ordering::Relaxed);
+        }
+    }
+
+    pub(crate) fn set_output_size(&self, output_bytes: u64) {
+        if let Some(data) = &self.data {
+            data.output_bytes.store(output_bytes, Ordering::Relaxed);
+        }
+    }
+
     fn write_now(&self) {
         if let Some(data) = &self.data {
             write_memory_line(data);
@@ -99,6 +114,9 @@ impl MemoryLogData {
             spectra_count: AtomicUsize::new(0),
             total_spectra: AtomicUsize::new(0),
             chromatogram_count: AtomicUsize::new(0),
+            input_bytes: AtomicU64::new(0),
+            output_bytes: AtomicU64::new(0),
+            observed_peak_bytes: AtomicU64::new(0),
         }
     }
 }
@@ -121,23 +139,35 @@ fn write_memory_line(data: &MemoryLogData) {
     let spectra_count = data.spectra_count.load(Ordering::Relaxed);
     let total_spectra = data.total_spectra.load(Ordering::Relaxed);
     let chromatogram_count = data.chromatogram_count.load(Ordering::Relaxed);
+    let input_bytes = data.input_bytes.load(Ordering::Relaxed);
+    let output_bytes = data.output_bytes.load(Ordering::Relaxed);
     let elapsed_seconds = data.start_time.elapsed().as_secs_f64();
     let percent = format_percent(spectra_count, total_spectra);
+    let input_size = format_gb(input_bytes);
+    let output_size = format_gb(output_bytes);
     match get_memory_status() {
-        Some(memory) => eprintln!(
-            "memory status: step={} spectra={} total={} percent={} chromatograms={} current={} peak={} time={:.1}s",
-            step,
-            spectra_count,
-            total_spectra,
-            percent,
-            chromatogram_count,
-            format_bytes(memory.current_bytes),
-            format_bytes(memory.peak_bytes),
-            elapsed_seconds
-        ),
+        Some(memory) => {
+            let peak_bytes = data
+                .observed_peak_bytes
+                .fetch_max(memory.current_bytes, Ordering::Relaxed)
+                .max(memory.current_bytes);
+            eprintln!(
+                "memory status: step={} spectra={} total={} percent={} chromatograms={} input_size={} output_size={} current={} peak={} time={:.1}s",
+                step,
+                spectra_count,
+                total_spectra,
+                percent,
+                chromatogram_count,
+                input_size,
+                output_size,
+                format_bytes(memory.current_bytes),
+                format_bytes(peak_bytes),
+                elapsed_seconds
+            );
+        }
         None => eprintln!(
-            "memory status: step={} spectra={} total={} percent={} chromatograms={} current=unknown peak=unknown time={:.1}s",
-            step, spectra_count, total_spectra, percent, chromatogram_count, elapsed_seconds
+            "memory status: step={} spectra={} total={} percent={} chromatograms={} input_size={} output_size={} current=unknown peak=unknown time={:.1}s",
+            step, spectra_count, total_spectra, percent, chromatogram_count, input_size, output_size, elapsed_seconds
         ),
     }
 }

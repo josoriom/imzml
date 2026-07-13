@@ -1,20 +1,16 @@
 #[derive(Clone, Copy)]
 pub(crate) struct MemoryStatus {
     pub(crate) current_bytes: u64,
-    pub(crate) peak_bytes: u64,
 }
 
 pub(crate) fn get_memory_status() -> Option<MemoryStatus> {
-    let (current_bytes, peak_bytes) = read_resident_memory()?;
-    Some(MemoryStatus {
-        current_bytes,
-        peak_bytes,
-    })
+    let current_bytes = read_resident_memory()?;
+    Some(MemoryStatus { current_bytes })
 }
 
 #[cfg(target_os = "macos")]
 #[allow(deprecated)]
-fn read_resident_memory() -> Option<(u64, u64)> {
+fn read_resident_memory() -> Option<u64> {
     unsafe {
         let mut data: libc::mach_task_basic_info_data_t = std::mem::zeroed();
         let mut count = libc::MACH_TASK_BASIC_INFO_COUNT;
@@ -27,16 +23,14 @@ fn read_resident_memory() -> Option<(u64, u64)> {
         if result != libc::KERN_SUCCESS {
             return None;
         }
-        Some((data.resident_size as u64, data.resident_size_max as u64))
+        Some(data.resident_size as u64)
     }
 }
 
 #[cfg(target_os = "linux")]
-fn read_resident_memory() -> Option<(u64, u64)> {
+fn read_resident_memory() -> Option<u64> {
     let text = std::fs::read_to_string("/proc/self/status").ok()?;
-    let current_bytes = read_status_kb(&text, "VmRSS:")? * 1024;
-    let peak_bytes = read_status_kb(&text, "VmHWM:").unwrap_or(current_bytes / 1024) * 1024;
-    Some((current_bytes, peak_bytes))
+    Some(read_status_kb(&text, "VmRSS:")? * 1024)
 }
 
 #[cfg(target_os = "linux")]
@@ -48,7 +42,7 @@ fn read_status_kb(text: &str, key: &str) -> Option<u64> {
 }
 
 #[cfg(target_os = "windows")]
-fn read_resident_memory() -> Option<(u64, u64)> {
+fn read_resident_memory() -> Option<u64> {
     use windows_sys::Win32::System::ProcessStatus::{
         GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS,
     };
@@ -59,14 +53,11 @@ fn read_resident_memory() -> Option<(u64, u64)> {
         if GetProcessMemoryInfo(GetCurrentProcess(), &mut counters, size) == 0 {
             return None;
         }
-        Some((
-            counters.WorkingSetSize as u64,
-            counters.PeakWorkingSetSize as u64,
-        ))
+        Some(counters.WorkingSetSize as u64)
     }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-fn read_resident_memory() -> Option<(u64, u64)> {
+fn read_resident_memory() -> Option<u64> {
     None
 }

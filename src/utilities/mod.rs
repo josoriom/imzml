@@ -23,10 +23,13 @@ pub(crate) mod write_options;
 pub(crate) use write_options::get_write_options;
 
 pub(crate) mod format;
-pub(crate) use format::{format_bytes, format_percent};
+pub(crate) use format::{format_bytes, format_gb, format_percent};
 
 pub(crate) mod memory_status;
 pub(crate) use memory_status::get_memory_status;
 
 pub(crate) mod memory_log;
 pub(crate) use memory_log::MemoryLog;
+
+pub(crate) mod temp_file;
+pub(crate) use temp_file::TempFile;

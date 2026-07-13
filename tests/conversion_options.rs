@@ -20,8 +20,8 @@ fn zero_block_size_falls_back_to_default() {
     let (imzml_path, ibd_path) = write_pair(&workspace, &xml, &ibd);
     let ion_path = workspace.path("out.ion");
     let options = ConversionOptions {
-        log_memory: false,
         block_size: 0,
+        ..ConversionOptions::default()
     };
 
     let summary = convert_imzml_to_ion_with_options(&imzml_path, &ibd_path, &ion_path, options)
@@ -36,8 +36,56 @@ fn small_block_size_still_converts() {
     let (imzml_path, ibd_path) = write_pair(&workspace, &xml, &ibd);
     let ion_path = workspace.path("out.ion");
     let options = ConversionOptions {
-        log_memory: false,
         block_size: 1024,
+        ..ConversionOptions::default()
+    };
+
+    let summary = convert_imzml_to_ion_with_options(&imzml_path, &ibd_path, &ion_path, options)
+        .expect("convert");
+    assert_eq!(summary.spectra_count, 2);
+}
+
+#[test]
+fn mz_window_disabled_still_converts() {
+    let workspace = Workspace::new("mz_window_off");
+    let (xml, ibd) = sample();
+    let (imzml_path, ibd_path) = write_pair(&workspace, &xml, &ibd);
+    let ion_path = workspace.path("out.ion");
+    let options = ConversionOptions {
+        mz_window: 0.0,
+        ..ConversionOptions::default()
+    };
+
+    let summary = convert_imzml_to_ion_with_options(&imzml_path, &ibd_path, &ion_path, options)
+        .expect("convert");
+    assert_eq!(summary.spectra_count, 2);
+}
+
+#[test]
+fn large_mz_window_still_converts() {
+    let workspace = Workspace::new("mz_window_large");
+    let (xml, ibd) = sample();
+    let (imzml_path, ibd_path) = write_pair(&workspace, &xml, &ibd);
+    let ion_path = workspace.path("out.ion");
+    let options = ConversionOptions {
+        mz_window: 1000.0,
+        ..ConversionOptions::default()
+    };
+
+    let summary = convert_imzml_to_ion_with_options(&imzml_path, &ibd_path, &ion_path, options)
+        .expect("convert");
+    assert_eq!(summary.spectra_count, 2);
+}
+
+#[test]
+fn negative_mz_window_falls_back_to_default() {
+    let workspace = Workspace::new("mz_window_negative");
+    let (xml, ibd) = sample();
+    let (imzml_path, ibd_path) = write_pair(&workspace, &xml, &ibd);
+    let ion_path = workspace.path("out.ion");
+    let options = ConversionOptions {
+        mz_window: -1.0,
+        ..ConversionOptions::default()
     };
 
     let summary = convert_imzml_to_ion_with_options(&imzml_path, &ibd_path, &ion_path, options)
@@ -53,7 +101,7 @@ fn memory_logging_enabled_still_converts() {
     let ion_path = workspace.path("out.ion");
     let options = ConversionOptions {
         log_memory: true,
-        block_size: 0,
+        ..ConversionOptions::default()
     };
 
     let summary = convert_imzml_to_ion_with_options(&imzml_path, &ibd_path, &ion_path, options)

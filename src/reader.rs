@@ -38,9 +38,11 @@ impl ImzmlReader {
             .unwrap_or(0);
         memory_log.set_total_spectra(total_spectra);
         let groups = collect_array_groups(&metadata);
+        let source = IbdFile::open(ibd_path).map_err(ImzmlError::io("cannot open ibd file"))?;
+        memory_log.set_input_size(source.byte_count());
         Ok(Self {
             mzml,
-            source: IbdFile::open(ibd_path).map_err(ImzmlError::io("cannot open ibd file"))?,
+            source,
             groups,
             spectra_count: 0,
             chromatogram_count: 0,
@@ -94,6 +96,10 @@ impl ImzmlReader {
     pub(crate) fn write_memory_now(&mut self, step: &str) {
         self.memory_log
             .write_step(step, self.spectra_count, self.chromatogram_count);
+    }
+
+    pub(crate) fn set_output_size(&self, output_bytes: u64) {
+        self.memory_log.set_output_size(output_bytes);
     }
 
     fn set_memory_step(&self, step: &str) {

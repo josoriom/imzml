@@ -1,13 +1,13 @@
 use std::path::Path;
 
 use ionic::ion::encoder::scan_stream::ScanStream;
-use ionic::ion::{IonResult, TempFile};
+use ionic::ion::IonResult;
 use ionic::mzml::structs::{Chromatogram, MzML, Spectrum};
 
 use crate::error::ImzmlError;
 use crate::options::{ConversionOptions, ConversionSummary};
 use crate::reader::ImzmlReader;
-use crate::utilities::{normalize_imzml_file, MemoryLog};
+use crate::utilities::{normalize_imzml_file, MemoryLog, TempFile};
 
 pub struct Imzml {
     normalized_file: TempFile,
@@ -24,7 +24,7 @@ impl Imzml {
         memory_log.write_step("start", 0, 0);
 
         let normalized_file =
-            TempFile::new(imzml_path).map_err(ImzmlError::ion("cannot create temporary file"))?;
+            TempFile::new(imzml_path).map_err(ImzmlError::io("cannot create temporary file"))?;
         normalize_imzml_file(imzml_path, normalized_file.path())
             .map_err(ImzmlError::io("cannot normalize imzML file"))?;
         memory_log.write_step("xml ready", 0, 0);
@@ -60,6 +60,10 @@ impl Imzml {
 
     pub(crate) fn write_memory_now(&mut self, step: &str) {
         self.reader.write_memory_now(step);
+    }
+
+    pub(crate) fn set_output_size(&self, output_bytes: u64) {
+        self.reader.set_output_size(output_bytes);
     }
 }
 

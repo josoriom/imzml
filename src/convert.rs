@@ -1,13 +1,13 @@
 use std::path::Path;
 
-use ionic::ion::{FileWriter, IonReader, ReadOptions, TempFile};
+use ionic::ion::{FileWriter, IonReader, ReadOptions};
 use ionic::mzml::structs::Spectrum;
 use ionic::IonWriter;
 
 use crate::error::ImzmlError;
 use crate::imzml::Imzml;
 use crate::options::{ConversionOptions, ConversionSummary};
-use crate::utilities::get_write_options;
+use crate::utilities::{get_write_options, TempFile};
 
 pub fn convert_imzml_to_ion(
     imzml_path: &Path,
@@ -45,7 +45,7 @@ pub fn write_ion_file(
     options: ConversionOptions,
 ) -> Result<ConversionSummary, ImzmlError> {
     let temp_output =
-        TempFile::new(ion_path).map_err(ImzmlError::ion("cannot create temporary file"))?;
+        TempFile::new(ion_path).map_err(ImzmlError::io("cannot create temporary file"))?;
     {
         let mut output = FileWriter::open_path(temp_output.path())
             .map_err(ImzmlError::ion("cannot create ion file"))?;
@@ -62,7 +62,11 @@ pub fn write_ion_file(
     imzml.write_memory_now("ion written");
     temp_output
         .move_to(ion_path)
-        .map_err(ImzmlError::ion("cannot move ion file into place"))?;
+        .map_err(ImzmlError::io("cannot move ion file into place"))?;
+    let output_bytes = std::fs::metadata(ion_path)
+        .map_err(ImzmlError::io("cannot read ion file size"))?
+        .len();
+    imzml.set_output_size(output_bytes);
     imzml.write_memory_now("done");
     Ok(imzml.summary())
 }

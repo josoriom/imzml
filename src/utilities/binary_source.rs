@@ -19,6 +19,10 @@ impl IbdFile {
             byte_count,
         })
     }
+
+    pub(crate) fn byte_count(&self) -> u64 {
+        self.byte_count
+    }
 }
 
 impl BinarySource for IbdFile {

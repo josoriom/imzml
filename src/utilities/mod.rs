@@ -1,7 +1,7 @@
 pub(crate) mod accessions;
 pub(crate) use accessions::{
-    EXTERNAL_ARRAY_LENGTH, EXTERNAL_DATA, EXTERNAL_OFFSET, FLOAT_16_BIT, FLOAT_32_BIT, FLOAT_64_BIT,
-    INT_32_BIT, INT_64_BIT,
+    EXTERNAL_ARRAY_LENGTH, EXTERNAL_DATA, EXTERNAL_OFFSET, FLOAT_16_BIT, FLOAT_32_BIT,
+    FLOAT_64_BIT, INT_32_BIT, INT_64_BIT,
 };
 
 pub(crate) mod binary_source;

@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use ionic::ion::encoder::scan_stream::ScanStream;
 use ionic::ion::IonResult;
+use ionic::ion::ScanStream;
 use ionic::mzml::structs::{Chromatogram, MzML, Spectrum};
 
 use crate::error::ImzmlError;

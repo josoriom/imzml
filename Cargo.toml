@@ -26,4 +26,4 @@ windows-sys = { version = "0.59", features = [
 ] }
 
 [dependencies]
-ionic = { git = "https://github.com/josoriom/ionic", branch = "api", version = "0.1.0" }
+ionic = { git = "https://github.com/josoriom/ionic", branch = "main", version = "0.1.0" }

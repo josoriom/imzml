@@ -1,5 +1,5 @@
-use ionic::ion::encoder::encode::WriteOptions;
 use ionic::ion::SectionStorage;
+use ionic::ion::WriteOptions;
 
 use crate::options::{ConversionOptions, DEFAULT_BLOCK_SIZE, DEFAULT_MZ_WINDOW};
 

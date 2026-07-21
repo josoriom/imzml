@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use ionic::ion::encoder::scan_stream::ScanStream;
+use ionic::ion::ScanStream;
 use ionic::ion::{IonError, IonResult};
 use ionic::mzml::structs::{Chromatogram, MzML, Spectrum};
 use ionic::mzml::MzmlReader;
